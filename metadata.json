@@ -1,0 +1,8 @@
+{
+  "name": "NetworkAI Assistant",
+  "description": "A sophisticated AI-powered personal networking assistant that helps you manage relationships and connect with key people.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
