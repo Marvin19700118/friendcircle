@@ -2,12 +2,28 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Message, Contact, Interaction } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// 嘗試從環境變數取得 API Key (Vite 使用 import.meta.env，但也相容 process.env 定義)
+const apiKey = import.meta.env?.GEMINI_API_KEY || (process as any).env?.GEMINI_API_KEY || (process as any).env?.API_KEY;
+
+// 如果沒有 API Key，我們會創建一個 Mock 的客戶端或在呼叫時拋出錯誤，避免 App 啟動時白屏
+const createAIClient = () => {
+  if (!apiKey) {
+    console.warn("API Key is missing. AI features will not work.");
+    return null; // 回傳 null 表示未初始化
+  }
+  return new GoogleGenAI({ apiKey });
+}
+
+const aiClient = createAIClient();
+const getAIModels = () => {
+  if (!aiClient) throw new Error("API Key must be set in .env to use AI features.");
+  return aiClient.models;
+}
 
 export const getNetworkingAdvice = async (chatHistory: Message[], userInput: string) => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response = await getAIModels().generateContent({
+      model: "gemini-2.0-flash", // Updated to latest stable model name if applicable, or keep flash
       contents: chatHistory.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }]
@@ -30,8 +46,8 @@ export const getNetworkingAdvice = async (chatHistory: Message[], userInput: str
 
 export const extractContactFromCard = async (base64Image: string, mimeType: string) => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response = await getAIModels().generateContent({
+      model: "gemini-2.0-flash",
       contents: [
         {
           parts: [
@@ -87,8 +103,8 @@ export const getSuggestedTopics = async (contact: Partial<Contact>, interactions
       請提供具體、有溫度且能展現「我有記住上次談話內容」的話題建議。
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response = await getAIModels().generateContent({
+      model: "gemini-2.0-flash",
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         systemInstruction: "你是一位精通社交心理學的 AI 助手。請以繁體中文回答，並以 JSON 陣列格式回傳，每個元素包含 'topic' (話題內容) 與 'reason' (建議理由)。",
