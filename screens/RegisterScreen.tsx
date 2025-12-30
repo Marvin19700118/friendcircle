@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Input from '../components/Input';
 
 interface RegisterScreenProps {
-  onRegister: (email: string) => void;
+  onRegister: (email: string, password: string, name: string) => void;
   onNavigateLogin: () => void;
 }
 
@@ -15,14 +15,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateL
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && name && password) {
-      onRegister(email);
+      onRegister(email, password, name);
     }
   };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="flex items-center p-4 pb-2 justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
-        <div 
+        <div
           onClick={onNavigateLogin}
           className="text-[#111418] dark:text-white flex size-12 shrink-0 items-center justify-start cursor-pointer transition-opacity hover:opacity-70"
         >
@@ -67,7 +67,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onNavigateL
           required
         />
 
-        <button 
+        <button
           type="submit"
           className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] w-full shadow-md shadow-primary/20 hover:bg-primary/90 transition-colors mt-4"
         >

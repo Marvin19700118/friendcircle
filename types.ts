@@ -9,6 +9,7 @@ export interface Message {
 export interface User {
   email: string;
   name: string;
+  uid?: string;
 }
 
 export enum Screen {
@@ -54,6 +55,7 @@ export interface Contact {
   notes?: string;
   linkedin?: string;
   facebook?: string;
+  birthday?: string;
   twitter?: string;
   interactions?: Interaction[];
   photos?: string[]; // 新增：活動照片

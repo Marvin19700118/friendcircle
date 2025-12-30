@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { User, Contact, Screen, LogEntry } from '../types';
+import { subscribeToContacts } from '../services/dataService';
 
 interface DashboardScreenProps {
   user: User;
@@ -14,55 +15,67 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
   const [activeTab, setActiveTab] = useState('全部');
   const [selectedCircle, setSelectedCircle] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
+  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  React.useEffect(() => {
+    if (user?.uid) {
+      console.log("Dashboard: 訂閱使用者資料...", user.uid);
+      const unsubscribe = subscribeToContacts(user.uid, (newContacts) => {
+        console.log("Dashboard: 收到 Firestore 資料更新，筆數:", newContacts.length);
+        console.log("資料內容:", newContacts);
+        setContacts(newContacts);
+      });
+      return () => unsubscribe();
+    } else {
+      console.log("Dashboard: 尚未取得 user.uid，跳過訂閱");
+    }
+  }, [user]);
 
   const socialCircles = [
     { name: '全部', icon: 'groups' },
-    { name: '商務', icon: 'business_center' },
-    { name: '好友', icon: 'sentiment_satisfied' },
-    { name: '家教', icon: 'school' },
+    { name: '廠商', icon: 'storefront' },
+    { name: '客戶', icon: 'sentiment_satisfied' },
+    { name: '家人', icon: 'family_restroom' },
     { name: 'VIP', icon: 'grade' },
-    { name: '近期未聯繫', icon: 'history' }
   ];
 
-  const allContacts: Contact[] = [
-    { 
-      id: '1', name: 'Alice Wang', role: '產品設計師', company: 'DesignCo', 
-      tags: ['好友'], actionIcon: 'chat_bubble', 
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-      phone: '0912-345-678', email: 'alice@designco.com', lastInteraction: '3天前'
-    },
-    { 
-      id: '2', name: 'Andy Kuo', role: '行銷經理', company: 'MarketFlow', 
-      tags: ['商務'], initials: 'AK', actionIcon: 'call' 
-    },
-    { 
-      id: '3', name: 'Chris Lee', role: '技術長', company: 'StartupAI', 
-      tags: ['商務', 'VIP'], actionIcon: 'mail', 
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      phone: '0988-777-666', email: 'chris@startupai.com'
-    }
-  ];
-
+  // Replacing allContacts dummy data with real 'contacts'
   const filteredContactsByLetter = useMemo(() => {
-    let filtered = allContacts.filter(contact => {
-      const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (contact.company?.toLowerCase().includes(searchQuery.toLowerCase()));
+    let filtered = contacts.filter(contact => {
+      const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (contact.company?.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCircle = selectedCircle === '全部' || contact.tags?.includes(selectedCircle);
       return matchesSearch && matchesCircle;
     });
 
+    // 根據 activeTab 進行二次過濾
+    if (activeTab === 'AI 推薦') {
+      // 邏輯：優先顯示 VIP 且很久沒互動的，或是沒有互動紀錄的
+      filtered = filtered.filter(c => {
+        const isVIP = c.tags?.includes('VIP');
+        const hasNoInteractions = !c.interactions || c.interactions.length === 0;
+        // 簡單實作：顯示 VIP 或 無互動紀錄者
+        return isVIP || hasNoInteractions;
+      });
+    } else if (activeTab === '需要跟進') {
+      // 邏輯：顯示有被標記為 '近期未聯繫' 或 '需要跟進' 的 (這裡暫時用 tags 判斷，或者可擴充邏輯)
+      filtered = filtered.filter(c => c.tags?.includes('近期未聯繫') || c.tags?.includes('需要跟進'));
+    }
+
     const groups: Record<string, Contact[]> = {};
     filtered.forEach(contact => {
-      const firstLetter = contact.name.charAt(0).toUpperCase();
-      if (!groups[firstLetter]) groups[firstLetter] = [];
-      groups[firstLetter].push(contact);
+      const firstLetter = (contact.initials?.[0] || contact.name.charAt(0)).toUpperCase();
+      const key = /^[A-Z]$/.test(firstLetter) ? firstLetter : '#';
+
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(contact);
     });
 
     return Object.keys(groups).sort().reduce((acc, key) => {
       acc[key] = groups[key];
       return acc;
     }, {} as Record<string, Contact[]>);
-  }, [selectedCircle, searchQuery]);
+  }, [selectedCircle, searchQuery, contacts, activeTab]);
 
   const renderHistoryView = () => (
     <div className="flex flex-col gap-4 p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -73,15 +86,14 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
       <div className="flex flex-col gap-3">
         {logs.map((log) => (
           <div key={log.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-50 dark:border-slate-700 flex gap-4">
-            <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${
-              log.type === 'create' ? 'bg-green-50 text-green-600' :
+            <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${log.type === 'create' ? 'bg-green-50 text-green-600' :
               log.type === 'update' ? 'bg-blue-50 text-blue-600' :
-              log.type === 'photo' ? 'bg-amber-50 text-amber-600' : 'bg-purple-50 text-purple-600'
-            }`}>
+                log.type === 'photo' ? 'bg-amber-50 text-amber-600' : 'bg-purple-50 text-purple-600'
+              }`}>
               <span className="material-symbols-outlined text-[20px]">
                 {log.type === 'create' ? 'person_add' :
-                 log.type === 'update' ? 'edit_note' :
-                 log.type === 'photo' ? 'image' : 'event_repeat'}
+                  log.type === 'update' ? 'edit_note' :
+                    log.type === 'photo' ? 'image' : 'event_repeat'}
               </span>
             </div>
             <div className="flex-1">
@@ -103,9 +115,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
       <div className="px-4">
         <div className="relative flex items-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary/20">
           <span className="material-symbols-outlined text-slate-400 mr-2">search</span>
-          <input 
-            type="text" 
-            placeholder="搜尋姓名、公司或職稱..." 
+          <input
+            type="text"
+            placeholder="搜尋姓名、公司或職稱..."
             className="flex-1 bg-transparent border-none focus:ring-0 text-sm p-0 text-slate-700 dark:text-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -120,14 +132,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
         </div>
         <div className="flex gap-2.5 px-4 overflow-x-auto no-scrollbar py-1">
           {socialCircles.map((circle) => (
-            <button 
-              key={circle.name} 
-              onClick={() => setSelectedCircle(circle.name)} 
-              className={`flex items-center gap-1.5 flex-none px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                selectedCircle === circle.name 
-                  ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105' 
-                  : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 hover:border-primary/50'
-              }`}
+            <button
+              key={circle.name}
+              onClick={() => setSelectedCircle(circle.name)}
+              className={`flex items-center gap-1.5 flex-none px-4 py-2 rounded-full text-xs font-bold transition-all ${selectedCircle === circle.name
+                ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105'
+                : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 hover:border-primary/50'
+                }`}
             >
               <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: selectedCircle === circle.name ? "'FILL' 1" : "" }}>
                 {circle.icon}
@@ -140,14 +151,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
 
       <div className="flex gap-2 px-4 py-1 border-t border-slate-50 dark:border-slate-800 mt-1 pt-3">
         {['全部', 'AI 推薦', '需要跟進'].map((tab) => (
-          <button 
-            key={tab} 
-            onClick={() => setActiveTab(tab)} 
-            className={`flex-none px-5 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === tab 
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' 
-                : 'text-slate-400 dark:text-slate-500'
-            }`}
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-none px-5 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === tab
+              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+              : 'text-slate-400 dark:text-slate-500'
+              }`}
           >
             {tab}
           </button>
@@ -160,8 +170,8 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
             <h2 className="text-primary text-[11px] font-bold mb-3 ml-2 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 w-7 h-7 flex items-center justify-center rounded-lg">{letter}</h2>
             <div className="flex flex-col gap-3">
               {(items as Contact[]).map(contact => (
-                <div 
-                  key={contact.id} 
+                <div
+                  key={contact.id}
                   onClick={() => onNavigate(Screen.CONTACT_DETAIL, contact)}
                   className="bg-white dark:bg-slate-800 rounded-3xl p-3.5 flex items-center justify-between shadow-sm border border-slate-50 dark:border-slate-700 cursor-pointer active:scale-[0.98] transition-all hover:shadow-md"
                 >
