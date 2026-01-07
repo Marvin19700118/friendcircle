@@ -1,16 +1,24 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Layout from './components/Layout';
 import { Screen, User, Contact, LogEntry } from './types';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
-import DashboardScreen from './screens/DashboardScreen';
-import ChatScreen from './screens/ChatScreen';
-import ContactDetailScreen from './screens/ContactDetailScreen';
+
+// Lazy load screens for better performance
+const LoginScreen = React.lazy(() => import('./screens/LoginScreen'));
+const RegisterScreen = React.lazy(() => import('./screens/RegisterScreen'));
+const DashboardScreen = React.lazy(() => import('./screens/DashboardScreen'));
+const ChatScreen = React.lazy(() => import('./screens/ChatScreen'));
+const ContactDetailScreen = React.lazy(() => import('./screens/ContactDetailScreen'));
 
 import { auth, initializationError } from './services/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { loginUser, registerUser, logoutUser, loginWithGoogle } from './services/authService';
+
+const LoadingFallback = () => (
+  <div className="flex h-screen items-center justify-center bg-[#f8fafc] dark:bg-slate-950">
+    <div className="w-8 h-8 rounded-full border-2 border-slate-100 border-t-primary animate-spin"></div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.LOGIN);
@@ -111,18 +119,25 @@ const App: React.FC = () => {
         </div>
       );
     }
-    if (isLoading) return <div className="flex h-screen items-center justify-center">載入中...</div>;
+    if (isLoading) return <LoadingFallback />;
 
     if (!user && (currentScreen !== Screen.LOGIN && currentScreen !== Screen.REGISTER)) {
-      return <LoginScreen onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} onNavigateRegister={() => navigateTo(Screen.REGISTER)} />;
+      return <LoginScreen onGoogleLogin={handleGoogleLogin} />;
     }
 
     switch (currentScreen) {
       case Screen.LOGIN:
-        return <LoginScreen onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} onNavigateRegister={() => navigateTo(Screen.REGISTER)} />;
+        return <LoginScreen onGoogleLogin={handleGoogleLogin} />;
       case Screen.REGISTER:
         return <RegisterScreen onRegister={handleRegister} onNavigateLogin={() => navigateTo(Screen.LOGIN)} />;
       case Screen.DASHBOARD:
+        return <DashboardScreen
+          user={user!}
+          onLogout={handleLogout}
+          currentScreen={currentScreen}
+          onNavigate={navigateTo}
+          logs={logs}
+        />;
       case Screen.HISTORY:
         return <DashboardScreen
           user={user!}
@@ -147,11 +162,17 @@ const App: React.FC = () => {
           onAddLog={addLog}
         />;
       default:
-        return <LoginScreen onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} onNavigateRegister={() => navigateTo(Screen.REGISTER)} />;
+        return <LoginScreen onGoogleLogin={handleGoogleLogin} />;
     }
   };
 
-  return <Layout>{renderScreen()}</Layout>;
+  return (
+    <Layout>
+      <Suspense fallback={<LoadingFallback />}>
+        {renderScreen()}
+      </Suspense>
+    </Layout>
+  );
 };
 
 export default App;

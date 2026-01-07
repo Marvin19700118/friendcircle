@@ -80,10 +80,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ user, onLogout, onNavigateHome,
       if (response.suggestedQuestions && response.suggestedQuestions.length > 0) {
         setActiveSuggestions(response.suggestedQuestions);
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("ChatScreen Error:", err);
       setMessages(prev => [...prev, {
         role: 'model',
-        text: "抱歉，發生錯誤，請稍後再試。",
+        text: `抱歉，發生錯誤：${err.message || "請稍後再試。"}`,
         time: getCurrentTime()
       }]);
     } finally {
@@ -130,8 +131,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ user, onLogout, onNavigateHome,
 
                 <div className="flex flex-col gap-1.5">
                   <div className={`px - 4 py - 3 rounded - [20px] text - [15px] leading - relaxed shadow - sm ${msg.role === 'user'
-                      ? 'bg-primary text-white rounded-br-none'
-                      : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-50 dark:border-slate-700 rounded-bl-none'
+                    ? 'bg-primary text-white rounded-br-none'
+                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-50 dark:border-slate-700 rounded-bl-none'
                     } `}>
                     {msg.text}
                   </div>
@@ -157,6 +158,15 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ user, onLogout, onNavigateHome,
                         <div>
                           <h4 className="font-bold text-slate-900 dark:text-white text-sm">{contact.name}</h4>
                           <p className="text-slate-400 text-[11px] mt-0.5">{contact.role}</p>
+                          {contact.tags && contact.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {contact.tags.map(tag => (
+                                <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md text-[8px] font-bold border border-slate-50 dark:border-slate-600">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-300">

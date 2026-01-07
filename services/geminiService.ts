@@ -1,28 +1,26 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
 import { Message, Contact, Interaction } from "../types";
 
-// 嘗試從環境變數取得 API Key (Vite 使用 import.meta.env，但也相容 process.env 定義)
-const apiKey = import.meta.env?.GEMINI_API_KEY || (process as any).env?.GEMINI_API_KEY || (process as any).env?.API_KEY;
+const FUNCTION_URL = "https://us-central1-aifriendcircle-63093.cloudfunctions.net/geminiProxy";
 
-// 如果沒有 API Key，我們會創建一個 Mock 的客戶端或在呼叫時拋出錯誤，避免 App 啟動時白屏
-const createAIClient = () => {
-  if (!apiKey) {
-    console.warn("API Key is missing. AI features will not work.");
-    return null; // 回傳 null 表示未初始化
+const callGeminiProxy = async (action: string, payload: any) => {
+  const response = await fetch(FUNCTION_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action, payload }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
-  return new GoogleGenAI({ apiKey });
-}
 
-const aiClient = createAIClient();
-const getAIModels = () => {
-  if (!aiClient) throw new Error("API Key must be set in .env to use AI features.");
-  return aiClient.models;
-}
+  return await response.json();
+};
 
 export const getNetworkingAdvice = async (chatHistory: Message[], userInput: string, allContacts: Contact[]) => {
   try {
-    // 建立聯絡人資料上下文 (簡化版以節省 Token)
     const contextData = allContacts.map(c => ({
       id: c.id,
       name: c.name,
@@ -56,28 +54,13 @@ export const getNetworkingAdvice = async (chatHistory: Message[], userInput: str
       }
     `;
 
-    const response = await getAIModels().generateContent({
-      model: "gemini-2.0-flash-exp",
-      contents: chatHistory.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      })).concat([{ role: 'user', parts: [{ text: userInput }] }]),
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            answer: { type: Type.STRING },
-            suggestedQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-            relevantContactIds: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["answer", "suggestedQuestions"]
-        }
-      },
+    const result = await callGeminiProxy("getNetworkingAdvice", {
+      chatHistory,
+      userInput,
+      systemPrompt
     });
 
-    return JSON.parse(response.text || "{}");
+    return result;
   } catch (error) {
     console.error("Gemini API Error:", error);
     return {
@@ -90,40 +73,13 @@ export const getNetworkingAdvice = async (chatHistory: Message[], userInput: str
 
 export const extractContactFromCard = async (base64Image: string, mimeType: string) => {
   try {
-    const response = await getAIModels().generateContent({
-      model: "gemini-2.0-flash-exp",
-      contents: [
-        {
-          parts: [
-            {
-              inlineData: {
-                data: base64Image.split(',')[1],
-                mimeType: mimeType,
-              },
-            },
-            {
-              text: "Extract contact information from this business card. Return the name, role/title, company name, phone number, and email address.",
-            },
-          ],
-        },
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING },
-            role: { type: Type.STRING },
-            company: { type: Type.STRING },
-            phone: { type: Type.STRING },
-            email: { type: Type.STRING },
-          },
-          required: ["name", "role", "company", "phone", "email"],
-        },
-      },
+    const result = await callGeminiProxy("extractContactFromCard", {
+      base64Data: base64Image.split(',')[1],
+      mimeType: mimeType,
+      prompt: "Extract contact information from this business card. Return a JSON object with: name, role/title, company name, phone number, and email address."
     });
 
-    return JSON.parse(response.text);
+    return result;
   } catch (error) {
     console.error("OCR Error:", error);
     throw error;
@@ -147,27 +103,12 @@ export const getSuggestedTopics = async (contact: Partial<Contact>, interactions
       請提供具體、有溫度且能展現「我有記住上次談話內容」的話題建議。
     `;
 
-    const response = await getAIModels().generateContent({
-      model: "gemini-2.0-flash-exp",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: "你是一位精通社交心理學的 AI 助手。請以繁體中文回答，並以 JSON 陣列格式回傳，每個元素包含 'topic' (話題內容) 與 'reason' (建議理由)。",
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              topic: { type: Type.STRING },
-              reason: { type: Type.STRING }
-            },
-            required: ["topic", "reason"]
-          }
-        }
-      }
+    const result = await callGeminiProxy("getSuggestedTopics", {
+      prompt,
+      systemInstruction: "你是一位精通社交心理學的 AI 助手。請以繁體中文回答，並以 JSON 陣列格式回傳，每個元素包含 'topic' (話題內容) 與 'reason' (建議理由)。"
     });
 
-    return JSON.parse(response.text || "[]");
+    return result;
   } catch (error) {
     console.error("Suggested Topics Error:", error);
     return [];
@@ -189,18 +130,12 @@ export const getProfileSummary = async (url: string) => {
       請以條列式呈現。嚴格禁止輸出任何「好的」、「我會為您...」、「以下是...」等開場白或結尾客套話。直接輸出這幾點內容即可。請用繁體中文。
     `;
 
-    // 使用 Google Search Grounding 工具
-    const response = await getAIModels().generateContent({
-      model: "gemini-2.0-flash-exp",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        tools: [{ googleSearch: {} }], // 啟用 Google Search
-        systemInstruction: "你是一個嚴格的資料提取機器人。只輸出請求的資訊，完全不包含任何對話、問候或自我描述的語句。",
-        temperature: 0.5, // Lower temperature for more deterministic/plain output
-      }
+    const result = await callGeminiProxy("getProfileSummary", {
+      prompt,
+      systemInstruction: "你是一個嚴格的資料提取機器人。只輸出請求的資訊，完全不包含任何對話、問候或自我描述的語句。"
     });
 
-    return response.text || "無法生成摘要。";
+    return result || "無法生成摘要。";
   } catch (error) {
     console.error("Profile Summary Error:", error);
     return "發生錯誤：無法生成摘要，請稍後再試。";

@@ -1,0 +1,396 @@
+﻿{
+  "status": "success",
+  "result": [
+    {
+      "protoPayload": {
+        "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+        "status": {},
+        "authenticationInfo": {
+          "principalEmail": "marvinhsu1970@gmail.com",
+          "principalSubject": "user:marvinhsu1970@gmail.com",
+          "oauthInfo": {
+            "oauthClientId": "563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com"
+          }
+        },
+        "requestMetadata": {
+          "requestAttributes": {},
+          "destinationAttributes": {}
+        },
+        "serviceName": "cloudfunctions.googleapis.com",
+        "methodName": "google.cloud.functions.v2.FunctionService.CreateFunction",
+        "resourceName": "projects/aifriendcircle-63093/locations/us-central1/functions/geminiProxy",
+        "response": {
+          "url": "https://us-central1-aifriendcircle-63093.cloudfunctions.net/geminiProxy",
+          "environment": "GEN_2",
+          "labels": {
+            "deployment-tool": "cli-firebase",
+            "firebase-functions-hash": "9601b7599f904e74df9a222ec96c209071a4a579",
+            "deployment-callable": "true"
+          },
+          "satisfiesPzi": true,
+          "serviceConfig": {
+            "maxInstanceRequestConcurrency": 80,
+            "allTrafficOnLatestRevision": true,
+            "secretEnvironmentVariables": [
+              {
+                "key": "GEMINI_API_KEY",
+                "projectId": "aifriendcircle-63093",
+                "version": "1",
+                "secret": "GEMINI_API_KEY"
+              }
+            ],
+            "availableMemory": "256Mi",
+            "ingressSettings": "ALLOW_ALL",
+            "timeoutSeconds": 60,
+            "serviceAccountEmail": "526624252406-compute@developer.gserviceaccount.com",
+            "revision": "geminiproxy-00001-nol",
+            "uri": "https://geminiproxy-tv56dw5fca-uc.a.run.app",
+            "availableCpu": "1"
+          },
+          "updateTime": "2026-01-07T04:10:09.967222672Z",
+          "state": "ACTIVE",
+          "createTime": "2026-01-07T04:10:09.967222672Z",
+          "@type": "type.googleapis.com/google.cloud.functions.v2.Function",
+          "buildConfig": {
+            "automaticUpdatePolicy": {},
+            "dockerRegistry": "ARTIFACT_REGISTRY",
+            "entryPoint": "geminiProxy",
+            "dockerRepository": "projects/aifriendcircle-63093/locations/us-central1/repositories/gcf-artifacts",
+            "source": {},
+            "serviceAccount": "projects/aifriendcircle-63093/serviceAccounts/526624252406-compute@developer.gserviceaccount.com",
+            "runtime": "nodejs20"
+          },
+          "name": "projects/aifriendcircle-63093/locations/us-central1/functions/geminiProxy"
+        },
+        "resourceLocation": {
+          "currentLocations": [
+            "us-central1"
+          ]
+        }
+      },
+      "insertId": "1yt9esedmf33",
+      "resource": {
+        "type": "cloud_function",
+        "labels": {
+          "project_id": "aifriendcircle-63093",
+          "region": "us-central1",
+          "function_name": "geminiProxy"
+        }
+      },
+      "timestamp": "2026-01-07T04:11:37.454379373Z",
+      "severity": "NOTICE",
+      "logName": "projects/aifriendcircle-63093/logs/cloudaudit.googleapis.com%2Factivity",
+      "operation": {
+        "id": "projects/aifriendcircle-63093/locations/us-central1/operations/operation-1767759008865-647c477c59c2c-0ad44a77-4a6e5ae0",
+        "producer": "cloudfunctions.googleapis.com",
+        "last": true
+      },
+      "writerEmailAddress": "cloud-control2-functions-frontend@prod.google.com",
+      "internalId": {
+        "projectNumber": "526624252406"
+      },
+      "receiveTimestamp": "2026-01-07T04:11:37.626074031Z",
+      "internalMetadata": {
+        "queryAnnotations": {
+          "residentBucketUuid": "526624252406_a",
+          "residentBucketEntityId": {
+            "projectNumber": "526624252406"
+          }
+        },
+        "bucketUuid": [
+          {
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "uid": "526624252406_a"
+          }
+        ],
+        "billingSize": "2211",
+        "logBucketWithSinkInfo": [
+          {
+            "uid": "526624252406_a",
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "sinkInfo": [
+              {
+                "status": "OK",
+                "unmodifiedRequiredSinkInternalId": {
+                  "projectNumber": "526624252406"
+                }
+              }
+            ],
+            "bucketOwner": {
+              "projectNumber": "526624252406"
+            }
+          }
+        ],
+        "matchesRequiredSink": true
+      }
+    },
+    {
+      "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080.",
+      "insertId": "695ddcf700092769784f1cf8",
+      "resource": {
+        "type": "cloud_run_revision",
+        "labels": {
+          "project_id": "aifriendcircle-63093",
+          "service_name": "geminiproxy",
+          "revision_name": "geminiproxy-00001-nol",
+          "location": "us-central1",
+          "configuration_name": "geminiproxy"
+        }
+      },
+      "timestamp": "2026-01-07T04:11:35.599913Z",
+      "severity": "INFO",
+      "labels": {
+        "instanceId": "0007e26d684e4118c8b9dfc7a4ed271220147ce17ae40f2e99aa06b1f6bd430d429cdcef5b40e83051b6f44804950b15a28d8a39bf71862398ffcdf5a527716d66bae2172a10bb30ab72a0f90b4fdda6",
+        "firebase-functions-hash": "9601b7599f904e74df9a222ec96c209071a4a579",
+        "goog-managed-by": "cloudfunctions",
+        "deployment-callable": "true",
+        "run.googleapis.com/base_image_versions": "us-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20251207_20_19_5_RC00"
+      },
+      "logName": "projects/aifriendcircle-63093/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+      "writerEmailAddress": "app-engine-appserver@prod.google.com",
+      "internalId": {
+        "projectNumber": "526624252406"
+      },
+      "receiveTimestamp": "2026-01-07T04:11:35.732478795Z",
+      "internalMetadata": {
+        "queryAnnotations": {
+          "residentBucketUuid": "526624252406_d",
+          "residentBucketEntityId": {
+            "projectNumber": "526624252406"
+          }
+        },
+        "bucketUuid": [
+          {
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "uid": "526624252406_d"
+          }
+        ],
+        "billingSize": "866",
+        "logBucketWithSinkInfo": [
+          {
+            "uid": "526624252406_d",
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "sinkInfo": [
+              {
+                "status": "OK",
+                "unmodifiedDefaultSinkInternalId": {
+                  "projectNumber": "526624252406"
+                }
+              }
+            ],
+            "bucketOwner": {
+              "projectNumber": "526624252406"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "textPayload": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check.",
+      "insertId": "695ddcf60000f4bfc7a3e656",
+      "resource": {
+        "type": "cloud_run_revision",
+        "labels": {
+          "service_name": "geminiproxy",
+          "configuration_name": "geminiproxy",
+          "location": "us-central1",
+          "revision_name": "geminiproxy-00001-nol",
+          "project_id": "aifriendcircle-63093"
+        }
+      },
+      "timestamp": "2026-01-07T04:11:34.062655Z",
+      "severity": "INFO",
+      "labels": {
+        "goog-managed-by": "cloudfunctions",
+        "deployment-callable": "true",
+        "firebase-functions-hash": "9601b7599f904e74df9a222ec96c209071a4a579",
+        "scaling_reason": "DEPLOYMENT_ROLLOUT",
+        "instanceId": "0007e26d684e4118c8b9dfc7a4ed271220147ce17ae40f2e99aa06b1f6bd430d429cdcef5b40e83051b6f44804950b15a28d8a39bf71862398ffcdf5a527716d66bae2172a10bb30ab72a0f90b4fdda6"
+      },
+      "logName": "projects/aifriendcircle-63093/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+      "writerEmailAddress": "app-engine-appserver@prod.google.com",
+      "internalId": {
+        "projectNumber": "526624252406"
+      },
+      "receiveTimestamp": "2026-01-07T04:11:34.067916987Z",
+      "internalMetadata": {
+        "queryAnnotations": {
+          "residentBucketUuid": "526624252406_d",
+          "residentBucketEntityId": {
+            "projectNumber": "526624252406"
+          }
+        },
+        "bucketUuid": [
+          {
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "uid": "526624252406_d"
+          }
+        ],
+        "billingSize": "852",
+        "logBucketWithSinkInfo": [
+          {
+            "uid": "526624252406_d",
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "sinkInfo": [
+              {
+                "status": "OK",
+                "unmodifiedDefaultSinkInternalId": {
+                  "projectNumber": "526624252406"
+                }
+              }
+            ],
+            "bucketOwner": {
+              "projectNumber": "526624252406"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "protoPayload": {
+        "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+        "authenticationInfo": {
+          "principalEmail": "marvinhsu1970@gmail.com",
+          "principalSubject": "user:marvinhsu1970@gmail.com",
+          "oauthInfo": {
+            "oauthClientId": "563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com"
+          }
+        },
+        "requestMetadata": {
+          "callerIp": "24.6.38.116",
+          "callerSuppliedUserAgent": "FirebaseCLI/15.1.0,gzip(gfe),gzip(gfe)",
+          "requestAttributes": {
+            "time": "2026-01-07T04:10:08.860082536Z",
+            "auth": {}
+          },
+          "destinationAttributes": {}
+        },
+        "serviceName": "cloudfunctions.googleapis.com",
+        "methodName": "google.cloud.functions.v2.FunctionService.CreateFunction",
+        "authorizationInfo": [
+          {
+            "resource": "projects/aifriendcircle-63093/locations/us-central1/functions/geminiProxy",
+            "permission": "cloudfunctions.functions.create",
+            "granted": true,
+            "resourceAttributes": {
+              "service": "cloudfunctions.googleapis.com",
+              "name": "projects/aifriendcircle-63093/locations/us-central1/functions/geminiProxy",
+              "type": "cloudfunctions.googleapis.com/Function"
+            },
+            "permissionType": "ADMIN_WRITE"
+          }
+        ],
+        "resourceName": "projects/aifriendcircle-63093/locations/us-central1/functions/geminiProxy",
+        "request": {
+          "@type": "type.googleapis.com/google.cloud.functions.v2.CreateFunctionRequest",
+          "function": {
+            "build_config": {
+              "entry_point": "geminiProxy",
+              "source": {},
+              "runtime": "nodejs20"
+            },
+            "name": "projects/aifriendcircle-63093/locations/us-central1/functions/geminiProxy",
+            "labels": {
+              "deployment-callable": "true",
+              "firebase-functions-hash": "9601b7599f904e74df9a222ec96c209071a4a579",
+              "deployment-tool": "cli-firebase"
+            },
+            "service_config": {
+              "max_instance_request_concurrency": 80,
+              "available_cpu": "1",
+              "secret_environment_variables": [
+                {
+                  "secret": "GEMINI_API_KEY",
+                  "project_id": "aifriendcircle-63093",
+                  "version": "1",
+                  "key": "GEMINI_API_KEY"
+                }
+              ],
+              "available_memory": "256Mi"
+            }
+          },
+          "parent": "projects/aifriendcircle-63093/locations/us-central1"
+        },
+        "response": {
+          "@type": "type.googleapis.com/google.longrunning.Operation"
+        },
+        "resourceLocation": {
+          "currentLocations": [
+            "us-central1"
+          ]
+        }
+      },
+      "insertId": "1yt9esedmev4",
+      "resource": {
+        "type": "cloud_function",
+        "labels": {
+          "region": "us-central1",
+          "project_id": "aifriendcircle-63093",
+          "function_name": "geminiProxy"
+        }
+      },
+      "timestamp": "2026-01-07T04:10:09.983707140Z",
+      "severity": "NOTICE",
+      "logName": "projects/aifriendcircle-63093/logs/cloudaudit.googleapis.com%2Factivity",
+      "operation": {
+        "id": "projects/aifriendcircle-63093/locations/us-central1/operations/operation-1767759008865-647c477c59c2c-0ad44a77-4a6e5ae0",
+        "producer": "cloudfunctions.googleapis.com",
+        "first": true
+      },
+      "writerEmailAddress": "cloud-control2-functions-frontend@prod.google.com",
+      "internalId": {
+        "projectNumber": "526624252406"
+      },
+      "receiveTimestamp": "2026-01-07T04:10:10.616572294Z",
+      "internalMetadata": {
+        "queryAnnotations": {
+          "residentBucketUuid": "526624252406_a",
+          "residentBucketEntityId": {
+            "projectNumber": "526624252406"
+          }
+        },
+        "bucketUuid": [
+          {
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "uid": "526624252406_a"
+          }
+        ],
+        "billingSize": "1919",
+        "logBucketWithSinkInfo": [
+          {
+            "uid": "526624252406_a",
+            "tcubeShardNames": [
+              "global11-us-west2"
+            ],
+            "sinkInfo": [
+              {
+                "status": "OK",
+                "unmodifiedRequiredSinkInternalId": {
+                  "projectNumber": "526624252406"
+                }
+              }
+            ],
+            "bucketOwner": {
+              "projectNumber": "526624252406"
+            }
+          }
+        ],
+        "matchesRequiredSink": true
+      }
+    }
+  ]
+}

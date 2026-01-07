@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Contact, Screen, Interaction, LogEntry } from '../types';
 import { extractContactFromCard, getSuggestedTopics, getProfileSummary } from '../services/geminiService';
-import { addContact, updateContact } from '../services/dataService';
+import { addContact, updateContact, deleteContact, subscribeToTags, addTag } from '../services/dataService';
 
 interface ContactDetailScreenProps {
   contact: Contact | null;
@@ -39,9 +39,25 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ contact, user
 
   // 社交圈標籤
   const [tags, setTags] = useState<string[]>(contact?.tags || []);
-  const [availableCircles, setAvailableCircles] = useState(['廠商', '客戶', '家人', 'VIP']);
+  const [dynamicTags, setDynamicTags] = useState<string[]>([]);
   const [showAddCircleInput, setShowAddCircleInput] = useState(false);
   const [newCircleValue, setNewCircleValue] = useState('');
+
+  useEffect(() => {
+    if (userId) {
+      const unsubscribe = subscribeToTags(userId, (tags) => {
+        setDynamicTags(tags.map(t => t.name));
+      });
+      return () => unsubscribe();
+    }
+  }, [userId]);
+
+  // Merge default circles with dynamic tags
+  const allCircles = React.useMemo(() => {
+    const defaults = ['廠商', '客戶', '家人', 'VIP'];
+    // Use Set to avoid duplicates
+    return Array.from(new Set([...defaults, ...dynamicTags]));
+  }, [dynamicTags]);
 
   // AI 建議話題
   const [suggestedTopics, setSuggestedTopics] = useState<AISuggestion[]>([]);
@@ -191,38 +207,110 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ contact, user
     );
   };
 
-  const handleAddNewCircle = () => {
+  const handleAddNewCircle = async () => {
     const trimmed = newCircleValue.trim();
-    if (trimmed) {
-      if (!availableCircles.includes(trimmed)) setAvailableCircles(prev => [...prev, trimmed]);
+    if (trimmed && userId) {
+      // 如果是全新的標籤（不在預設也不在 Firestore 中），則同步到 Firestore
+      const defaults = ['廠商', '客戶', '家人', 'VIP'];
+      if (!defaults.includes(trimmed) && !dynamicTags.includes(trimmed)) {
+        try {
+          await addTag(userId, { name: trimmed, icon: 'label' });
+        } catch (error) {
+          console.error("Error adding tag:", error);
+        }
+      }
+
+      // 將標籤加入當前聯絡人
       if (!tags.includes(trimmed)) setTags(prev => [...prev, trimmed]);
+
       setNewCircleValue('');
       setShowAddCircleInput(false);
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDelete = async () => {
+    if (!contact || !userId) return;
+
+    if (window.confirm(`確定要刪除聯絡人 ${name} 嗎？此動作無法復原。`)) {
+      try {
+        await deleteContact(userId, contact.id);
+        onAddLog({
+          action: '刪除聯絡人',
+          contactName: name,
+          type: 'delete',
+          details: `已將 ${name} 從聯絡人清單中移除。`
+        });
+        onBack();
+      } catch (error) {
+        console.error("Delete failed:", error);
+        alert("刪除失敗，請稍後再試");
+      }
+    }
+  };
+
+  // 圖片壓縮輔助函式
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 800;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); // 壓縮品質 0.7
+        };
+        img.onerror = error => reject(error);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     const remainingSlots = 5 - photos.length;
     const filesToProcess = (Array.from(files) as File[]).slice(0, remainingSlots);
 
-    filesToProcess.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotos(prev => {
-          const newPhotos = [...prev, reader.result as string].slice(0, 5);
-          onAddLog({
-            action: '上傳活動照片',
-            contactName: name || '未命名',
-            type: 'photo',
-            details: `為 ${name || '未命名'} 上傳了一張新照片。`
-          });
-          return newPhotos;
+    // 顯示 Loading 或提示處理中 (這裡簡化，直接處理)
+    try {
+      const compressedImages = await Promise.all(filesToProcess.map(file => compressImage(file)));
+      setPhotos(prev => {
+        const newPhotos = [...prev, ...compressedImages].slice(0, 5);
+        onAddLog({
+          action: '上傳活動照片',
+          contactName: name || '未命名',
+          type: 'photo',
+          details: `為 ${name || '未命名'} 上傳了 ${compressedImages.length} 張新照片。`
         });
-      };
-      reader.readAsDataURL(file);
-    });
+        return newPhotos;
+      });
+    } catch (error) {
+      console.error("Image compression failed:", error);
+      alert("圖片處理失敗，請試著上傳較小的圖片。");
+    }
+    // Reset file input
+    e.target.value = '';
   };
 
   const generateTopics = async () => {
@@ -390,7 +478,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ contact, user
       <section>
         <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-3 px-1">社交圈</h4>
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 border border-slate-100 dark:border-slate-700 flex flex-wrap gap-2">
-          {availableCircles.map(c => (
+          {allCircles.map(c => (
             <button key={c} onClick={() => toggleTag(c)} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${tags.includes(c) ? 'bg-primary text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-400'}`}>{c}</button>
           ))}
           {showAddCircleInput ? (
@@ -522,7 +610,14 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ contact, user
       <div className="flex items-center justify-between px-4 py-4 bg-white dark:bg-slate-900 sticky top-0 z-50 border-b border-slate-50 dark:border-slate-800">
         <button onClick={handleBack} className="text-slate-800 dark:text-white"><span className="material-symbols-outlined">arrow_back</span></button>
         <h1 className="text-lg font-bold text-slate-900 dark:text-white">{isNew ? '新增聯絡人' : '編輯資料'}</h1>
-        <button onClick={handleSaveContact} className="text-primary font-bold text-sm px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full">儲存</button>
+        <div className="flex gap-2">
+          {!isNew && (
+            <button onClick={handleDelete} className="text-rose-500 font-bold p-2 bg-rose-50 dark:bg-rose-900/20 rounded-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px]">delete</span>
+            </button>
+          )}
+          <button onClick={handleSaveContact} className="text-primary font-bold text-sm px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full">儲存</button>
+        </div>
       </div>
 
       {/* 頂部個人化區塊 */}

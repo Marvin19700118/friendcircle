@@ -29,7 +29,7 @@ export interface LogEntry {
   contactName: string;
   timestamp: string;
   details: string;
-  type: 'create' | 'update' | 'photo' | 'interaction';
+  type: 'create' | 'update' | 'photo' | 'interaction' | 'delete';
 }
 
 export interface Interaction {
@@ -60,4 +60,11 @@ export interface Contact {
   interactions?: Interaction[];
   photos?: string[]; // 新增：活動照片
   actionIcon?: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  icon?: string;
+  createdAt?: any; // Firestore Timestamp
 }

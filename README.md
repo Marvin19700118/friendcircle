@@ -1,4 +1,5 @@
 # NetworkAI - FriendCircle
+![Deploy to GitHub Pages](https://github.com/Marvin19700118/friendcircle/actions/workflows/deploy.yml/badge.svg)
 
 這是一個個人人脈管理 AI 助手應用程式。
 

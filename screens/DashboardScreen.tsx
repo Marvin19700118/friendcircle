@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, Contact, Screen, LogEntry } from '../types';
-import { subscribeToContacts } from '../services/dataService';
+import { User, Contact, Screen, LogEntry, Tag } from '../types';
+import { subscribeToContacts, subscribeToTags, addTag } from '../services/dataService';
 
 interface DashboardScreenProps {
   user: User;
@@ -16,35 +16,67 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
   const [selectedCircle, setSelectedCircle] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
   React.useEffect(() => {
     if (user?.uid) {
       console.log("Dashboard: 訂閱使用者資料...", user.uid);
-      const unsubscribe = subscribeToContacts(user.uid, (newContacts) => {
-        console.log("Dashboard: 收到 Firestore 資料更新，筆數:", newContacts.length);
-        console.log("資料內容:", newContacts);
+      const unsubscribeContacts = subscribeToContacts(user.uid, (newContacts) => {
         setContacts(newContacts);
       });
-      return () => unsubscribe();
-    } else {
-      console.log("Dashboard: 尚未取得 user.uid，跳過訂閱");
+      const unsubscribeTags = subscribeToTags(user.uid, (newTags) => {
+        setTags(newTags);
+      });
+      return () => {
+        unsubscribeContacts();
+        unsubscribeTags();
+      };
     }
   }, [user]);
 
-  const socialCircles = [
-    { name: '全部', icon: 'groups' },
-    { name: '廠商', icon: 'storefront' },
-    { name: '客戶', icon: 'sentiment_satisfied' },
-    { name: '家人', icon: 'family_restroom' },
-    { name: 'VIP', icon: 'grade' },
-  ];
+  const socialCircles = useMemo(() => {
+    const defaultNames = ['全部', '廠商', '客戶', '家人', 'VIP'];
+    const defaultCircles = defaultNames.map(name => ({
+      name,
+      icon: name === '全部' ? 'groups' : 'label'
+    }));
+
+    // Map existing tags to the circle format, avoiding duplicates with defaults
+    const customTags = tags.filter(tag => !defaultNames.includes(tag.name));
+    const tagCircles = customTags.map(tag => ({
+      name: tag.name,
+      icon: tag.icon || 'label'
+    }));
+
+    return [...defaultCircles, ...tagCircles, { name: '新增', icon: 'add' }];
+  }, [tags]);
+
+  const handleCircleClick = async (circleName: string) => {
+    if (circleName === '新增') {
+      const newTagName = window.prompt('請輸入新標籤名稱：');
+      if (newTagName && user?.uid) {
+        try {
+          // Check if already exists locally to avoid duplicates ideally, but Firestore is source of truth
+          await addTag(user.uid, { name: newTagName, icon: 'label' });
+        } catch (error) {
+          console.error("Error adding tag:", error);
+          alert("新增標籤失敗");
+        }
+      }
+    } else {
+      setSelectedCircle(circleName);
+    }
+  };
 
   // Replacing allContacts dummy data with real 'contacts'
   const filteredContactsByLetter = useMemo(() => {
     let filtered = contacts.filter(contact => {
       const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (contact.company?.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesCircle = selectedCircle === '全部' || contact.tags?.includes(selectedCircle);
+
+      // Fix: Check if selectedCircle is '全部' or if the contact's tags array includes the selectedCircle
+      const matchesCircle = selectedCircle === '全部' || (contact.tags && contact.tags.includes(selectedCircle));
+
       return matchesSearch && matchesCircle;
     });
 
@@ -134,7 +166,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
           {socialCircles.map((circle) => (
             <button
               key={circle.name}
-              onClick={() => setSelectedCircle(circle.name)}
+              onClick={() => handleCircleClick(circle.name)}
               className={`flex items-center gap-1.5 flex-none px-4 py-2 rounded-full text-xs font-bold transition-all ${selectedCircle === circle.name
                 ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105'
                 : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 hover:border-primary/50'
@@ -187,7 +219,16 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, onLogout, curre
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 dark:text-white text-[15px]">{contact.name}</h4>
-                      <p className="text-slate-400 text-[11px] font-medium mt-0.5">{contact.role} {contact.company ? `@ ${contact.company}` : ''}</p>
+                      <p className="text-slate-400 text-[11px] font-medium mt-0.5 mb-1.5">{contact.role} {contact.company ? `@ ${contact.company}` : ''}</p>
+                      {contact.tags && contact.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {contact.tags.map(tag => (
+                            <span key={tag} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md text-[9px] font-bold border border-slate-50 dark:border-slate-600">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button className="w-10 h-10 rounded-2xl bg-[#f1f5f9] dark:bg-slate-700/50 flex items-center justify-center text-slate-400">

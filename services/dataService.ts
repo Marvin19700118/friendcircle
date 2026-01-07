@@ -12,11 +12,12 @@ import {
     Timestamp
 } from "firebase/firestore";
 import { db } from "./firebaseConfig";
-import { Contact, Interaction, LogEntry } from "../types";
+import { Contact, Interaction, LogEntry, Tag } from "../types";
 
 export const CONTACTS_COLLECTION = 'contacts';
 export const INTERACTIONS_COLLECTION = 'interactions';
 export const LOGS_COLLECTION = 'logs';
+export const TAGS_COLLECTION = 'tags';
 
 // --- Contacts ---
 
@@ -53,6 +54,34 @@ export const updateContact = async (userId: string, contactId: string, data: Par
 
 export const deleteContact = async (userId: string, contactId: string) => {
     return deleteDoc(doc(db, `users/${userId}/${CONTACTS_COLLECTION}`, contactId));
+};
+
+// --- Tags / Definitions ---
+
+export const subscribeToTags = (userId: string, callback: (tags: Tag[]) => void) => {
+    const q = query(
+        collection(db, `users/${userId}/${TAGS_COLLECTION}`),
+        orderBy('createdAt', 'asc')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        const tags = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as Tag));
+        callback(tags);
+    });
+};
+
+export const addTag = async (userId: string, tag: Omit<Tag, 'id'>) => {
+    return addDoc(collection(db, `users/${userId}/${TAGS_COLLECTION}`), {
+        ...tag,
+        createdAt: serverTimestamp()
+    });
+};
+
+export const deleteTag = async (userId: string, tagId: string) => {
+    return deleteDoc(doc(db, `users/${userId}/${TAGS_COLLECTION}`, tagId));
 };
 
 // --- Logs / History ---

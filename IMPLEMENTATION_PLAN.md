@@ -24,7 +24,7 @@
 ### 2. 身分驗證與安全 (Auth & Security)
 - [ ] **真實註冊/登入**: 整合 OAuth (Google/Apple Login) 或 Email/Password 驗證。
 - [ ] **資料隔離**: 確保 A 使用者只能看到 A 的聯絡人。
-- [ ] **API Key 安全**: 將 Gemini API calls 移至後端 (Serverless Function)，避免 Key 在前端外洩。
+- [x] **API Key 安全**: 將 Gemini API calls 移至後端 (Serverless Function)，避免 Key 在前端外洩。
 
 ### 3. 檔案儲存 (Storage)
 - [ ] **圖片上傳**: 支援聯絡人大頭貼上傳。

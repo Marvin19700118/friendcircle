@@ -1,0 +1,4 @@
+﻿{
+  "status": "error",
+  "error": "Functions successfully deployed but could not set up cleanup policy in location us-central1. Pass the --force option to automatically set up a cleanup policy or run 'firebase functions:artifacts:setpolicy' to manually set up a cleanup policy."
+}

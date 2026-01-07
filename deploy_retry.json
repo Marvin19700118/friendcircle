@@ -1,0 +1,4 @@
+﻿{
+  "status": "error",
+  "error": "Request to https://secretmanager.googleapis.com/v1/projects/aifriendcircle-63093/secrets/GEMINI_API_KEY had HTTP Error: 403, Secret Manager API has not been used in project aifriendcircle-63093 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/secretmanager.googleapis.com/overview?project=aifriendcircle-63093 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."
+}

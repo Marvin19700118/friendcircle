@@ -1,0 +1,4 @@
+﻿{
+  "status": "error",
+  "error": "Your project \u001b[1maifriendcircle-63093\u001b[22m must be on the Blaze (pay-as-you-go) plan to complete this command. Required API \u001b[1martifactregistry.googleapis.com\u001b[22m can't be enabled until the upgrade is complete. To upgrade, visit the following URL:\n\nhttps://console.firebase.google.com/project/aifriendcircle-63093/usage/details"
+}
